@@ -1,0 +1,6 @@
+{
+  "name": "Shorts Video Generator",
+  "description": "Automated vertical video generator with Gemini script generation for health and nutrition.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

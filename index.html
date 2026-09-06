@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shorts Video Generator</title>
+    <meta name="description" content="Automated vertical video generator with Gemini script generation for health and nutrition." />
+    <meta property="og:title" content="Shorts Video Generator" />
+    <meta property="og:description" content="Automated vertical video generator with Gemini script generation for health and nutrition." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      /* Стили для встроенной панели настроек .env в index.html */
+      #env-drawer-toggle {
+        position: fixed;
+        bottom: 75px;
+        right: 16px;
+        z-index: 9999;
+        background: #10B981;
+        color: #0A0A0B;
+        border: none;
+        border-radius: 30px;
+        padding: 8px 14px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: transform 0.15s ease, background 0.15s ease;
+      }
+      @media (max-width: 640px) {
+        #env-drawer-toggle {
+          bottom: 75px;
+          right: 12px;
+          padding: 7px 12px;
+          font-size: 10px;
+          opacity: 0.9;
+        }
+      }
+      #env-drawer-toggle:hover {
+        transform: translateY(-2px);
+        background: #34D399;
+      }
+      #env-modal-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      #env-modal-backdrop.open {
+        display: flex;
+      }
+      .env-modal-card {
+        background: #121214;
+        border: 1px solid #27272A;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 580px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 24px;
+        color: #E4E4E7;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+        box-sizing: border-box;
+      }
+      .env-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #27272A;
+        padding-bottom: 14px;
+        margin-bottom: 18px;
+      }
+      .env-modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #10B981;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .env-close-btn {
+        background: transparent;
+        border: none;
+        color: #71717A;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+      }
+      .env-close-btn:hover {
+        color: #FFFFFF;
+        background: #27272A;
+      }
+      .env-form-group {
+        margin-bottom: 14px;
+      }
+      .env-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #A1A1AA;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .env-input, .env-select {
+        width: 100%;
+        background: #0A0A0B;
+        border: 1px solid #2E2E32;
+        border-radius: 8px;
+        padding: 9px 12px;
+        color: #FFFFFF;
+        font-family: monospace;
+        font-size: 12px;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease;
+      }
+      .env-input:focus, .env-select:focus {
+        outline: none;
+        border-color: #10B981;
+      }
+      .env-help-text {
+        font-size: 10px;
+        color: #71717A;
+        margin-top: 4px;
+      }
+      .env-save-btn {
+        width: 100%;
+        background: #10B981;
+        color: #0A0A0B;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        margin-top: 16px;
+        transition: background 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .env-save-btn:hover {
+        background: #34D399;
+      }
+      .env-status-box {
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        display: none;
+      }
+      .env-status-success {
+        display: block;
+        background: rgba(16, 185, 129, 0.15);
+        color: #6EE7B7;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .env-status-error {
+        display: block;
+        background: rgba(239, 68, 68, 0.15);
+        color: #FCA5A5;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+    </style>
+  </head>
+  <body class="bg-[#0A0A0B] text-slate-300 antialiased selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div id="root"></div>
+
+    <!-- Встроенная кнопка открытия формы ключей .env -->
+    <button id="env-drawer-toggle" type="button" title="Настроить ключи API и сохранить в .env">
+      ⚙️ Настройки ключей (.env)
+    </button>
+
+    <!-- Модальное окно с полями для ввода всех ключей: Gemini, Pexels, YouTube -->
+    <div id="env-modal-backdrop">
+      <div class="env-modal-card">
+        <div class="env-modal-header">
+          <div class="env-modal-title">
+            <span>⚙️</span>
+            <span>НАСТРОЙКА КЛЮЧЕЙ И СОХРАНЕНИЕ В .ENV</span>
+          </div>
+          <button type="button" class="env-close-btn" id="env-modal-close" title="Закрыть">&times;</button>
+        </div>
+
+        <form id="env-config-form">
+          <!-- 1. GEMINI_API_KEY -->
+          <div class="env-form-group">
+            <label class="env-label" for="input-gemini-key">
+              1. GEMINI_API_KEY (Сценарии ИИ)
+            </label>
+            <input
+              type="password"
+              id="input-gemini-key"
+              name="GEMINI_API_KEY"
+              class="env-input"
+              placeholder="AIzaSy..."
+              autocomplete="off"
+            />
+            <div class="env-help-text">Ключ Google AI Studio для генерации структуры сценария.</div>
+          </div>
+
+          <!-- 2. PEXELS_API_KEY -->
+          <div class="env-form-group">
+            <label class="env-label" for="input-pexels-key">
+              2. PEXELS_API_KEY (Фоновые вертикальные видео)
+            </label>
+            <input
+              type="password"
+              id="input-pexels-key"
+              name="PEXELS_API_KEY"
+              class="env-input"
+              placeholder="Бесплатный ключ с pexels.com/api/"
+              autocomplete="off"
+            />
+            <div class="env-help-text">Поиск вертикальных роликов (aesthetic, fitness, healthy) без рендеринга.</div>
+          </div>
+
+          <!-- 3. YOUTUBE_CLIENT_ID -->
+          <div class="env-form-group">
+            <label class="env-label" for="input-yt-client-id">
+              3. YOUTUBE_CLIENT_ID
+            </label>
+            <input
+              type="text"
+              id="input-yt-client-id"
+              name="YOUTUBE_CLIENT_ID"
+              class="env-input"
+              placeholder="xxxx.apps.googleusercontent.com"
+            />
+          </div>
+
+          <!-- 4. YOUTUBE_CLIENT_SECRET -->
+          <div class="env-form-group">
+            <label class="env-label" for="input-yt-client-secret">
+              4. YOUTUBE_CLIENT_SECRET
+            </label>
+            <input
+              type="password"
+              id="input-yt-client-secret"
+              name="YOUTUBE_CLIENT_SECRET"
+              class="env-input"
+              placeholder="GOCSPX-xxxx"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- 5. YOUTUBE_REFRESH_TOKEN -->
+          <div class="env-form-group">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <label class="env-label" for="input-yt-refresh-token">
+                5. YOUTUBE_REFRESH_TOKEN (OAuth2)
+              </label>
+              <button
+                type="button"
+                id="btn-quick-google-oauth"
+                style="background: #E11D48; color: #FFF; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;"
+              >
+                ⚡ Подключить через Google
+              </button>
+            </div>
+            <input
+              type="password"
+              id="input-yt-refresh-token"
+              name="YOUTUBE_REFRESH_TOKEN"
+              class="env-input"
+              placeholder="1//0xxxx..."
+              autocomplete="off"
+            />
+            <div class="env-help-text" style="line-height: 1.4; margin-top: 6px; padding: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; color: #FCD34D;">
+              <strong>⚡ Самый быстрый способ:</strong> нажмите кнопку <em>«⚡ Подключить через Google»</em> выше — откроется окно входа, и токен обновится автоматически в 1 клик.<br/>
+              <em>Если хотите вручную: используйте <a href="https://developers.google.com/oauthplayground" target="_blank" style="color: #60A5FA; text-decoration: underline;">OAuth Playground</a> или переведите приложение в статус «Publish App» в Google Cloud.</em>
+            </div>
+          </div>
+
+          <!-- 6. YOUTUBE_PRIVACY_STATUS -->
+          <div class="env-form-group">
+            <label class="env-label" for="select-yt-privacy">
+              6. СТАТУС ПУБЛИКАЦИИ YOUTUBE
+            </label>
+            <select id="select-yt-privacy" name="YOUTUBE_PRIVACY_STATUS" class="env-select">
+              <option value="public">public (Публичный доступ)</option>
+              <option value="unlisted">unlisted (Доступ только по ссылке)</option>
+              <option value="private">private (Приватный)</option>
+            </select>
+          </div>
+
+          <!-- Кнопка сохранения -->
+          <button type="submit" id="env-save-submit-btn" class="env-save-btn">
+            💾 СОХРАНИТЬ В .ENV
+          </button>
+        </form>
+
+        <div id="env-status-alert" class="env-status-box"></div>
+      </div>
+    </div>
+
+    <!-- Клиентский скрипт управления ключами -->
+    <script>
+      (function() {
+        const toggleBtn = document.getElementById('env-drawer-toggle');
+        const modalBackdrop = document.getElementById('env-modal-backdrop');
+        const closeBtn = document.getElementById('env-modal-close');
+        const form = document.getElementById('env-config-form');
+        const statusAlert = document.getElementById('env-status-alert');
+
+        // Открытие/закрытие модального окна
+        function openModal() {
+          modalBackdrop.classList.add('open');
+          loadCurrentConfig();
+        }
+        function closeModal() {
+          modalBackdrop.classList.remove('open');
+        }
+
+        toggleBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        modalBackdrop.addEventListener('click', function(e) {
+          if (e.target === modalBackdrop) closeModal();
+        });
+
+        // Загрузка текущих значений из сервера
+        async function loadCurrentConfig() {
+          try {
+            const res = await fetch('/api/config/get-env');
+            if (res.ok) {
+              const json = await res.json();
+              if (json.config) {
+                if (json.config.GEMINI_API_KEY) document.getElementById('input-gemini-key').value = json.config.GEMINI_API_KEY;
+                if (json.config.PEXELS_API_KEY) document.getElementById('input-pexels-key').value = json.config.PEXELS_API_KEY;
+                if (json.config.YOUTUBE_CLIENT_ID) document.getElementById('input-yt-client-id').value = json.config.YOUTUBE_CLIENT_ID;
+                if (json.config.YOUTUBE_CLIENT_SECRET) document.getElementById('input-yt-client-secret').value = json.config.YOUTUBE_CLIENT_SECRET;
+                if (json.config.YOUTUBE_REFRESH_TOKEN) document.getElementById('input-yt-refresh-token').value = json.config.YOUTUBE_REFRESH_TOKEN;
+                if (json.config.YOUTUBE_PRIVACY_STATUS) document.getElementById('select-yt-privacy').value = json.config.YOUTUBE_PRIVACY_STATUS;
+              }
+            }
+          } catch (e) {
+            console.warn('Не удалось загрузить текущие ключи:', e);
+          }
+        }
+
+        // Сохранение в .env
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          statusAlert.className = 'env-status-box';
+          statusAlert.style.display = 'none';
+
+          const formData = {
+            GEMINI_API_KEY: document.getElementById('input-gemini-key').value.trim(),
+            PEXELS_API_KEY: document.getElementById('input-pexels-key').value.trim(),
+            YOUTUBE_CLIENT_ID: document.getElementById('input-yt-client-id').value.trim(),
+            YOUTUBE_CLIENT_SECRET: document.getElementById('input-yt-client-secret').value.trim(),
+            YOUTUBE_REFRESH_TOKEN: document.getElementById('input-yt-refresh-token').value.trim(),
+            YOUTUBE_PRIVACY_STATUS: document.getElementById('select-yt-privacy').value,
+          };
+
+          const submitBtn = document.getElementById('env-save-submit-btn');
+          submitBtn.textContent = '⏳ Сохранение в .env...';
+          submitBtn.disabled = true;
+
+          try {
+            const res = await fetch('/api/config/save-env', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+              statusAlert.className = 'env-status-box env-status-success';
+              statusAlert.textContent = '✅ Все ключи успешно сохранены в файл .env и обновлены в оперативной памяти сервера!';
+              // Отправляем событие для React-приложения
+              window.dispatchEvent(new CustomEvent('env-updated', { detail: formData }));
+            } else {
+              throw new Error(data.error || 'Ошибка при сохранении');
+            }
+          } catch (err) {
+            statusAlert.className = 'env-status-box env-status-error';
+            statusAlert.textContent = '❌ Ошибка сохранения: ' + (err.message || err);
+          } finally {
+            submitBtn.textContent = '💾 СОХРАНИТЬ В .ENV';
+            submitBtn.disabled = false;
+          }
+        });
+
+        // Быстрая авторизация через Google прямо из модалки .env
+        const quickYtBtn = document.getElementById('btn-quick-google-oauth');
+        if (quickYtBtn) {
+          quickYtBtn.addEventListener('click', async function() {
+            quickYtBtn.textContent = '⏳ Запуск...';
+            quickYtBtn.disabled = true;
+            try {
+              const res = await fetch('/api/youtube/auth-url');
+              const data = await res.json();
+              if (data.success && data.authUrl) {
+                const width = 600;
+                const height = 700;
+                const left = window.screen.width / 2 - width / 2;
+                const top = window.screen.height / 2 - height / 2;
+                window.open(
+                  data.authUrl,
+                  'GoogleOAuthYouTube',
+                  'width=' + width + ',height=' + height + ',top=' + top + ',left=' + left + ',scrollbars=yes'
+                );
+              } else {
+                alert(data.error || 'Сначала заполните YOUTUBE_CLIENT_ID и YOUTUBE_CLIENT_SECRET и нажмите «Сохранить»');
+              }
+            } catch (err) {
+              alert(err.message || 'Ошибка запуска Google OAuth');
+            } finally {
+              quickYtBtn.textContent = '⚡ Подключить через Google';
+              quickYtBtn.disabled = false;
+            }
+          });
+        }
+
+        // Слушатель успешного завершения OAuth
+        window.addEventListener('message', function(event) {
+          if (event.data && event.data.type === 'YOUTUBE_AUTH_SUCCESS') {
+            loadCurrentConfig();
+            statusAlert.className = 'env-status-box env-status-success';
+            statusAlert.textContent = '✅ Канал «' + (event.data.channel || 'YouTube') + '» успешно подключен! Токен обновлен в .env';
+            statusAlert.style.display = 'block';
+          }
+        });
+
+        // Экспорт глобальной функции для вызова из React
+        window.openEnvModal = openModal;
+      })();
+    </script>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
